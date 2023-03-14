@@ -1,8 +1,16 @@
-use std::{future::Future, panic::catch_unwind, thread};
 use async_task::{Runnable, Task};
-use once_cell::sync::Lazy;
 use crossbeam_channel::{unbounded, Sender};
+use once_cell::sync::Lazy;
+use std::{future::Future, panic::catch_unwind, thread};
 
+/// Need to add some run queues, one for each worker, probably some sort of task construct
+pub struct Runtime {}
+
+impl Runtime {
+    pub fn block_on<T: Send + 'static>(&self, _task: impl Future<Output = T>) -> T {
+        todo!();
+    }
+}
 
 pub fn spawn<F, T>(future: F) -> Task<T>
 where
@@ -25,5 +33,5 @@ where
     let (runnable, task) = async_task::spawn(future, schedule);
 
     runnable.schedule();
-    return task;
+    task
 }

@@ -13,3 +13,8 @@ This project is not intended for production. There are no guarantees of
 performance, stability, or correctness. What it is, is a project for me to dive
 deeper and learn more. And maybe some day I'll write what I learn up and take
 you all along for the ride. But until then, gotta run!
+
+## References
+
+* [Kat's Expert Async Workshop](https://www.youtube.com/watch?v=Z-2siR9Ki84&list=PL1AoGvxomykTuOMzY5KrI4WiPCsIlYnAM&index=14).
+* [Making the Tokio scheduler 10x Faster](https://tokio.rs/blog/2019-10-scheduler)
