@@ -14,6 +14,16 @@ performance, stability, or correctness. What it is, is a project for me to dive
 deeper and learn more. And maybe some day I'll write what I learn up and take
 you all along for the ride. But until then, gotta run!
 
+## Roadmap
+
+* [] Basic `block_on` implementation
+* [] Multi-threaded run queue
+* [] Work stealing
+* [] Different implementations
+* [] Blocking task handling
+* [] Instrumentation and metrics
+* [] Cool tools
+
 ## References
 
 * [Kat's Expert Async Workshop](https://www.youtube.com/watch?v=Z-2siR9Ki84&list=PL1AoGvxomykTuOMzY5KrI4WiPCsIlYnAM&index=14).
