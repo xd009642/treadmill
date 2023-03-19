@@ -1,6 +1,6 @@
 use crate::worker::WorkerThread;
 use async_task::{Runnable, Task};
-use core::pin::{pin, Pin};
+use core::pin::{pin};
 use core::task::{Context, Poll};
 use crossbeam_channel::{unbounded, Sender};
 use once_cell::sync::Lazy;

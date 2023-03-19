@@ -28,7 +28,7 @@ pub struct WorkerThread {
 // method to push a task onto queue
 impl WorkerThread {
     pub fn new() -> Self {
-        let mut this = Self {
+        let this = Self {
             queue: Worker::new_fifo(),
             stealers: vec![],
         };
