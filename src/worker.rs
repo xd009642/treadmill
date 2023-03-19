@@ -1,6 +1,7 @@
 //! Works on things...?
 use async_task::Runnable;
 use crossbeam_deque::{Stealer, Worker};
+use std::sync::Arc;
 
 pub fn make_workers(workers: usize) -> Vec<WorkerThread> {
     let mut result = (0..workers)
