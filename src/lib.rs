@@ -1,17 +1,13 @@
-use crate::worker::WorkerThread;
+use crate::worker::{make_workers, WorkerThread};
 use async_task::{Runnable, Task};
-
-
 use crossbeam_channel::{unbounded, Sender};
 use futures_lite::future;
 use once_cell::sync::Lazy;
-
-use std::cell::{RefCell};
+use std::cell::RefCell;
 use std::sync::Arc;
-
 use std::thread_local;
 use std::{future::Future, panic::catch_unwind, thread};
-
+use tracing::trace;
 
 pub mod worker;
 
@@ -25,7 +21,39 @@ pub struct Runtime {
     workers: Arc<Vec<WorkerThread>>,
 }
 
+pub struct RuntimeBuilder {
+    workers: usize,
+}
+
+impl RuntimeBuilder {
+    pub fn new() -> Self {
+        Self {
+            workers: num_cpus::get_physical(),
+        }
+    }
+
+    pub fn num_workers(&mut self, workers: usize) -> &mut Self {
+        self.workers = workers;
+        self
+    }
+
+    pub fn build(self) -> Runtime {
+        let workers = Arc::new(make_workers(self.workers));
+        Runtime { workers }
+    }
+}
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::builder().build()
+    }
+}
+
 impl Runtime {
+    pub fn builder() -> RuntimeBuilder {
+        RuntimeBuilder::new()
+    }
+
     /// This blocks the current thread waiting for the future to complete. The futures-lite
     /// implementation
     /// [link](https://docs.rs/futures-lite/latest/futures_lite/future/fn.block_on.html) was used
@@ -58,6 +86,7 @@ impl Runtime {
 
             thread::spawn(move || {
                 while let Ok(runnable) = rx.recv() {
+                    trace!("Runnable is being scheduled");
                     let _ = catch_unwind(|| runnable.run());
                 }
             });

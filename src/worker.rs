@@ -2,7 +2,6 @@
 use async_task::Runnable;
 use crossbeam_deque::{Stealer, Worker};
 
-
 pub fn make_workers(workers: usize) -> Vec<WorkerThread> {
     let mut result = (0..workers)
         .map(|_| WorkerThread::new())
@@ -44,6 +43,5 @@ impl WorkerThread {
     pub fn run(&self) {
         // here I want to start the queue processing. So I'll spawn a thread and then read from
         // queue or steal and then run `runnable.run()` on the tasks I get
-        todo!();
     }
 }
