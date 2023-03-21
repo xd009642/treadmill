@@ -29,14 +29,14 @@ reduce boilerplate
 ## Roadmap
 
 * [x] Basic `block_on` implementation
-* [] Multi-threaded run queue
-* [] Work stealing
-* [] Macro crate for standard UX
-* [] A hyper executor
-* [] Different implementations
-* [] Blocking task handling
-* [] Instrumentation and metrics
-* [] Cool tools
+* [ ] Multi-threaded run queue
+* [ ] Work stealing
+* [ ] Macro crate for standard UX
+* [ ] A hyper executor
+* [ ] Different implementations
+* [ ] Blocking task handling
+* [ ] Instrumentation and metrics
+* [ ] Cool tools
 
 ## References
 
