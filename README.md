@@ -14,11 +14,25 @@ performance, stability, or correctness. What it is, is a project for me to dive
 deeper and learn more. And maybe some day I'll write what I learn up and take
 you all along for the ride. But until then, gotta run!
 
+## Crates
+
+This project is split into multiple crates in the workspace here they are and
+a brief description of their purpose:
+
+* treadmill: the runtime implementation. Handles scheduling tasks and is the
+core of the project
+* treadmill-macros: provide convenience macros like `#[treadmill::main]` to
+reduce boilerplate
+* treadmill-hyper: a hyper executor so we can do web servers with treadmill!
+* examples: example projects
+
 ## Roadmap
 
-* [] Basic `block_on` implementation
+* [x] Basic `block_on` implementation
 * [] Multi-threaded run queue
 * [] Work stealing
+* [] Macro crate for standard UX
+* [] A hyper executor
 * [] Different implementations
 * [] Blocking task handling
 * [] Instrumentation and metrics
