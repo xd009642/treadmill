@@ -1,0 +1,13 @@
+[package]
+name = "treadmill-examples"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+treadmill = { path = "../treadmill" }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+
+[[bin]]
+name = "simple"
+path = "src/simple.rs"
