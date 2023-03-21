@@ -3,7 +3,6 @@ use core::{
     pin::Pin,
     task::{Context, Poll},
 };
-use futures_lite::future;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use treadmill::Runtime;
 
@@ -28,6 +27,11 @@ impl Future for SayNTimes {
         if self.done == self.n {
             Poll::Ready(())
         } else {
+            // When we call await on a future it will be scheduled once by the executor. After that
+            // it's waker (which is accessible from the context) needs to wake it up to schedule it
+            // again. This avoids us calling poll when the future can't progress and busy-looping.
+            // As this is a very simple future we just call `Waker::wake_by_ref` each call because
+            // we know it will be ready to progress next poll for sure!
             ctx.waker().wake_by_ref();
             Poll::Pending
         }
@@ -38,10 +42,10 @@ fn main() {
     setup_logging();
 
     let rt = Runtime::default();
-    let fut = SayNTimes::new("Hello world".to_string(), 5);
-    let task = rt.spawn(fut);
-
-    rt.block_on(task);
+    rt.block_on(async {
+        let fut = SayNTimes::new("Hello world".to_string(), 5);
+        treadmill::spawn(fut).await
+    });
 }
 
 fn setup_logging() {

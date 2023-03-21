@@ -12,7 +12,9 @@ use tracing::trace;
 pub mod worker;
 
 thread_local! {
-    static RUNTIME_CONTEXT: RefCell<Option<Runtime>> = RefCell::new(None)
+    static RUNTIME: RefCell<Runtime> = RefCell::new(Runtime {
+        workers: Arc::default()
+    })
 }
 
 /// Need to add some run queues, one for each worker, probably some sort of task construct
@@ -56,14 +58,20 @@ impl Runtime {
 
     /// This blocks the current thread waiting for the future to complete. The futures-lite
     /// implementation
-    /// [link](https://docs.rs/futures-lite/latest/futures_lite/future/fn.block_on.html) was used
-    /// as a starting point but has been adapted for the multi-threaded runtime I'm trying to make
+    /// [link](https://docs.rs/futures-lite/latest/futures_lite/future/fn.block_on.html) is called
+    /// to set up the waker function and parker and call the future poll methods manually.
+    ///
+    /// What this function does on top of this to necessitate it's existence is initialise the
+    /// thread local handle to the runtime so that `treadmill::spawn` works and people don't need
+    /// to keep around a handle to the runtime in order to use it!
     pub fn block_on<T: Send + 'static>(&self, future: impl Future<Output = T>) -> T {
         // Here we should probably create our worker threads, turn this task into a Runnable and
         // submit it
         //
         // The current future will execute on the current thread (and not move) and then all
         // subsequent spawned tasks will be ran in the spawned workers
+
+        RUNTIME.with(|f| f.replace(self.clone()));
 
         future::block_on(future)
     }
@@ -111,21 +119,8 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    static QUEUE: Lazy<Sender<Runnable>> = Lazy::new(|| {
-        let (tx, rx) = unbounded::<Runnable>();
-
-        thread::spawn(move || {
-            while let Ok(runnable) = rx.recv() {
-                let _ = catch_unwind(|| runnable.run());
-            }
-        });
-
-        tx
-    });
-
-    let schedule = |runnable| QUEUE.send(runnable).unwrap();
-    let (runnable, task) = async_task::spawn(future, schedule);
-
-    runnable.schedule();
-    task
+    match RUNTIME.try_with(|rt| rt.borrow().spawn(future)) {
+        Ok(t) => t,
+        Err(_e) => panic!("No runtime exists!"),
+    }
 }
