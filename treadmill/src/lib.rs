@@ -1,4 +1,4 @@
-use crate::worker::{make_workers, WorkerThread};
+use crate::worker::WorkerPool;
 use async_task::{Runnable, Task};
 use crossbeam_channel::{unbounded, Sender};
 use futures_lite::future;
@@ -13,14 +13,14 @@ pub mod worker;
 
 thread_local! {
     static RUNTIME: RefCell<Runtime> = RefCell::new(Runtime {
-        workers: Arc::default()
+        workers: WorkerPool::empty()
     })
 }
 
 /// Need to add some run queues, one for each worker, probably some sort of task construct
 #[derive(Clone)]
 pub struct Runtime {
-    workers: Arc<Vec<WorkerThread>>,
+    pub(crate) workers: WorkerPool,
 }
 
 pub struct RuntimeBuilder {
@@ -40,7 +40,7 @@ impl RuntimeBuilder {
     }
 
     pub fn build(self) -> Runtime {
-        let workers = Arc::new(make_workers(self.workers));
+        let workers = WorkerPool::new(self.workers);
         Runtime { workers }
     }
 }
@@ -81,32 +81,7 @@ impl Runtime {
         F: Future<Output = T> + Send + 'static,
         T: Send + 'static,
     {
-        // Here I probably want to have some sort of RuntimeWorkers object containing the
-        // references to workers which I can move into a schedule function and submit to
-        // async_task::spawn. Then the object will pick a queue and pop the runnable into that
-        // queue and that queue will handle running.
-        //
-        // Probably need a way to get a handle to the current runtime without needing to store a
-        // reference to it around all the time - similar ergonomics to tokio with
-        // `tokio::task::spawn`
-        static QUEUE: Lazy<Sender<Runnable>> = Lazy::new(|| {
-            let (tx, rx) = unbounded::<Runnable>();
-
-            thread::spawn(move || {
-                while let Ok(runnable) = rx.recv() {
-                    trace!("Runnable is being scheduled");
-                    let _ = catch_unwind(|| runnable.run());
-                }
-            });
-
-            tx
-        });
-
-        let schedule = |runnable| QUEUE.send(runnable).unwrap();
-        let (runnable, task) = async_task::spawn(future, schedule);
-
-        runnable.schedule();
-        task
+        self.workers.spawn(future)
     }
 
     pub fn current() -> Runtime {
