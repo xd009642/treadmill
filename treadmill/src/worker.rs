@@ -33,12 +33,13 @@ impl WorkerPool {
         T: Send + 'static,
     {
         let worker_index = fastrand::usize(0..self.workers.len());
+        trace!("Spawning task to worker[{}]", worker_index);
         self.workers[worker_index].submit_task(future)
     }
 }
 
 pub fn make_workers(workers: usize) -> Vec<Arc<WorkerThread>> {
-    let (mut txs, rxs): (Vec<_>, Vec<_>) = (0..workers).map(|_| WorkerThread::new()).unzip();
+    let (txs, mut rxs): (Vec<_>, Vec<_>) = (0..workers).map(|_| WorkerThread::new()).unzip();
 
     for i in 0..workers {
         for j in 0..workers {
@@ -47,9 +48,10 @@ pub fn make_workers(workers: usize) -> Vec<Arc<WorkerThread>> {
             }
             let stealer = txs[j].queue.stealer();
             rxs[i].stealers.push(stealer);
+            rxs[i].id = i;
         }
         trace!("Starting worker {} task receiving queue", i);
-        rxs[i].run();
+        rxs[i].clone().run();
     }
     txs
 }
@@ -58,7 +60,9 @@ pub struct WorkerThread {
     queue: Worker<Runnable>,
 }
 
+#[derive(Clone)]
 pub struct TaskReceiver {
+    id: usize,
     queue_out: Stealer<Runnable>,
     stealers: Vec<Stealer<Runnable>>,
 }
@@ -71,6 +75,7 @@ impl WorkerThread {
         let queue_out = queue.stealer();
         let tx = Arc::new(Self { queue });
         let rx = TaskReceiver {
+            id: 0,
             queue_out,
             stealers: vec![],
         };
@@ -83,7 +88,7 @@ impl WorkerThread {
         T: Send + 'static,
     {
         let schedule = |runnable| self.queue.push(runnable);
-        let (runnable, task) = async_task::spawn(future, schedule);
+        let (runnable, task) = unsafe { async_task::spawn_unchecked(future, schedule) };
         runnable.schedule();
         task
     }
@@ -97,6 +102,7 @@ impl TaskReceiver {
             // queue or steal and then run `runnable.run()` on the tasks I get
             loop {
                 if let Steal::Success(runnable) = self.queue_out.steal() {
+                    trace!("Running {}", self.id);
                     runnable.run();
                 }
             }
