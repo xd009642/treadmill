@@ -24,22 +24,38 @@ pub struct Runtime {
 
 pub struct RuntimeBuilder {
     workers: usize,
+    enable_work_stealing: bool,
 }
 
 impl RuntimeBuilder {
+    /// Create a new builder for a runtime
     pub fn new() -> Self {
         Self {
             workers: num_cpus::get_physical(),
+            enable_work_stealing: true,
         }
     }
 
-    pub fn num_workers(&mut self, workers: usize) -> &mut Self {
+    /// By default work stealing is enabled. In an actual runtime you typically wouldn't make this
+    /// an option as work-stealing is a performance optimisation. However, as treadmill is in part
+    /// an educational project it's useful to have it as a configuration option to compare
+    /// performance with and without work stealing!
+    pub fn work_stealing(mut self, enabled: bool) -> Self {
+        self.enable_work_stealing = enabled;
+        self
+    }
+
+    /// Number of worker threads processing tasks. By default this is the number of physical CPUs
+    /// on the system.
+    pub fn num_workers(mut self, workers: usize) -> Self {
         self.workers = workers;
         self
     }
 
+    /// Create a runtime with the provided settings - or using sensible defaults if no settings
+    /// were provided.
     pub fn build(self) -> Runtime {
-        let workers = WorkerPool::new(self.workers);
+        let workers = WorkerPool::new(self.workers, self.enable_work_stealing);
         Runtime { workers }
     }
 }
@@ -75,6 +91,7 @@ impl Runtime {
         future::block_on(future)
     }
 
+    /// Spawns a task onto the runtime, this means it will run independently of other tasks.
     pub fn spawn<F, T>(&self, future: F) -> Task<T>
     where
         F: Future<Output = T> + Send + 'static,
@@ -94,6 +111,9 @@ impl Runtime {
         self.workers.spawn_on_worker(future, index)
     }
 
+    /// Gets a handle to the current runtime. As treadmill uses thread local storage to create the
+    /// runtime this will only return it from the thread which `block_on` was called when within an
+    /// asynchronous function.
     #[inline(always)]
     pub fn current() -> Runtime {
         match RUNTIME.try_with(|rt| rt.borrow().clone()) {
@@ -103,6 +123,7 @@ impl Runtime {
     }
 }
 
+/// Spawns a future on the current threads runtime.
 pub fn spawn<F, T>(future: F) -> Task<T>
 where
     F: Future<Output = T> + Send + 'static,

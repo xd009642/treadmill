@@ -13,11 +13,11 @@ pub struct WorkerPool {
 }
 
 impl WorkerPool {
-    pub fn new(len: usize) -> Self {
+    pub fn new(len: usize, enable_work_stealing: bool) -> Self {
         assert_ne!(len, 0);
 
         Self {
-            workers: Arc::new(make_workers(len)),
+            workers: Arc::new(make_workers(len, enable_work_stealing)),
         }
     }
 
@@ -47,17 +47,19 @@ impl WorkerPool {
     }
 }
 
-pub fn make_workers(workers: usize) -> Vec<Arc<WorkerThread>> {
+fn make_workers(workers: usize, enable_work_stealing: bool) -> Vec<Arc<WorkerThread>> {
     let (txs, mut rxs): (Vec<_>, Vec<_>) = (0..workers).map(|_| WorkerThread::new()).unzip();
 
     for i in 0..workers {
-        for j in 0..workers {
-            if j == i {
-                continue;
+        if enable_work_stealing {
+            for j in 0..workers {
+                if j == i {
+                    continue;
+                }
+                let stealer = txs[j].queue.stealer();
+                rxs[i].stealers.push(stealer);
+                rxs[i].id = i;
             }
-            let stealer = txs[j].queue.stealer();
-            rxs[i].stealers.push(stealer);
-            rxs[i].id = i;
         }
         trace!("Starting worker {} task receiving queue", i);
         rxs[i].clone().run();
