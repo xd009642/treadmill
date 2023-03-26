@@ -3,6 +3,7 @@
 use hyper::rt::Executor;
 use std::future::Future;
 
+#[derive(Clone, Copy)]
 pub struct TreadmillExecutor;
 
 impl<F> Executor<F> for TreadmillExecutor
@@ -14,3 +15,4 @@ where
         treadmill::spawn(fut).detach();
     }
 }
+
