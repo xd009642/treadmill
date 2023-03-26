@@ -113,6 +113,14 @@ impl TaskReceiver {
                 if let Steal::Success(runnable) = self.queue_out.steal() {
                     trace!("Running {}", self.id);
                     runnable.run();
+                } else {
+                    for stealer in &self.stealers {
+                        if let Steal::Success(runnable) = stealer.steal() {
+                            trace!("Stole a task");
+                            runnable.run();
+                            break;
+                        }
+                    }
                 }
             }
         });
