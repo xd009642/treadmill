@@ -1,13 +1,12 @@
 use crate::worker::WorkerPool;
-use async_task::{Runnable, Task};
-use crossbeam_channel::{unbounded, Sender};
+use async_task::Task;
+
 use futures_lite::future;
-use once_cell::sync::Lazy;
+
 use std::cell::RefCell;
-use std::sync::Arc;
+
+use std::future::Future;
 use std::thread_local;
-use std::{future::Future, panic::catch_unwind, thread};
-use tracing::trace;
 
 pub mod worker;
 
