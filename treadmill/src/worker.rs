@@ -36,6 +36,15 @@ impl WorkerPool {
         trace!("Spawning task to worker[{}]", worker_index);
         self.workers[worker_index].submit_task(future)
     }
+
+    pub fn spawn_on_worker<F, T>(&self, future: F, worker_index: usize) -> Task<T>
+    where
+        F: Future<Output = T> + Send + 'static,
+        T: Send + 'static,
+    {
+        trace!("Spawning task to worker[{}]", worker_index);
+        self.workers[worker_index].submit_task(future)
+    }
 }
 
 pub fn make_workers(workers: usize) -> Vec<Arc<WorkerThread>> {

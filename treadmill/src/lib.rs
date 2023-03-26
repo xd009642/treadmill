@@ -84,8 +84,23 @@ impl Runtime {
         self.workers.spawn(future)
     }
 
+    /// This method exists on the runtime to just allow us to test the work stealing
+    /// implementation. So we'll create a ton of futures and only put them on one worker and then
+    /// see that things are actually completed on other workers!
+    pub fn spawn_on_worker<F, T>(&self, future: F, index: usize) -> Task<T>
+    where
+        F: Future<Output = T> + Send + 'static,
+        T: Send + 'static,
+    {
+        self.workers.spawn_on_worker(future, index)
+    }
+
+    #[inline(always)]
     pub fn current() -> Runtime {
-        todo!()
+        match RUNTIME.try_with(|rt| rt.borrow().clone()) {
+            Ok(t) => t,
+            Err(_e) => panic!("No runtime exists!"),
+        }
     }
 }
 
@@ -94,8 +109,5 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    match RUNTIME.try_with(|rt| rt.borrow().spawn(future)) {
-        Ok(t) => t,
-        Err(_e) => panic!("No runtime exists!"),
-    }
+    Runtime::current().spawn(future)
 }
