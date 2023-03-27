@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 async-task = "4.3.0"
-crossbeam-channel = "0.5.7"
 crossbeam-deque = "0.8.3"
 fastrand = "1.9.0"
 futures-lite = "1.12.0"
