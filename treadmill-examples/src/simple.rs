@@ -38,14 +38,12 @@ impl Future for SayNTimes {
     }
 }
 
-fn main() {
+#[treadmill_macros::main]
+async fn main() {
     setup_logging();
 
-    let rt = Runtime::default();
-    rt.block_on(async {
-        let fut = SayNTimes::new("Hello world".to_string(), 5);
-        treadmill::spawn(fut).await
-    });
+    let fut = SayNTimes::new("Hello world".to_string(), 5);
+    treadmill::spawn(fut).await
 }
 
 fn setup_logging() {
