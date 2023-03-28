@@ -1,12 +1,13 @@
 use crate::worker::WorkerPool;
 use async_task::Task;
-
 use futures_lite::future;
-
 use std::cell::RefCell;
-
 use std::future::Future;
 use std::thread_local;
+
+// Re-exports
+#[cfg(feature = "macros")]
+pub use treadmill_macros::*;
 
 pub mod worker;
 

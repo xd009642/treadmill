@@ -38,7 +38,7 @@ impl Future for SayNTimes {
     }
 }
 
-#[treadmill_macros::main]
+#[treadmill::main]
 async fn main() {
     setup_logging();
 
