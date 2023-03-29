@@ -1,4 +1,5 @@
 //! Works on things...?
+use crate::io_driver::Driver;
 use async_task::Runnable;
 use async_task::Task;
 use core::future::Future;
@@ -10,6 +11,7 @@ use tracing::trace;
 #[derive(Clone)]
 pub struct WorkerPool {
     workers: Arc<Vec<Arc<WorkerThread>>>,
+    driver: Arc<Driver>,
 }
 
 impl WorkerPool {
@@ -18,12 +20,16 @@ impl WorkerPool {
 
         Self {
             workers: Arc::new(make_workers(len, enable_work_stealing)),
+            driver: Driver::new().expect("Unable to create IO Driver").into(),
         }
     }
 
     pub fn empty() -> Self {
         Self {
             workers: Default::default(),
+            driver: Driver::new_with_capacity(0)
+                .expect("Unable to create IO Driver")
+                .into(),
         }
     }
 

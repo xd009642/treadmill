@@ -9,6 +9,7 @@ use std::thread_local;
 #[cfg(feature = "macros")]
 pub use treadmill_macros::*;
 
+pub mod io_driver;
 #[cfg(feature = "net")]
 pub mod net;
 pub mod worker;
