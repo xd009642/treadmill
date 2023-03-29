@@ -45,6 +45,11 @@ impl WorkerPool {
         trace!("Spawning task to worker[{}]", worker_index);
         self.workers[worker_index].submit_task(future)
     }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.workers.is_empty()
+    }
 }
 
 fn make_workers(workers: usize, enable_work_stealing: bool) -> Vec<Arc<WorkerThread>> {

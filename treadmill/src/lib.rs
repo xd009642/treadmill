@@ -9,6 +9,8 @@ use std::thread_local;
 #[cfg(feature = "macros")]
 pub use treadmill_macros::*;
 
+#[cfg(feature = "net")]
+pub mod net;
 pub mod worker;
 
 thread_local! {
@@ -115,12 +117,33 @@ impl Runtime {
     /// Gets a handle to the current runtime. As treadmill uses thread local storage to create the
     /// runtime this will only return it from the thread which `block_on` was called when within an
     /// asynchronous function.
+    ///
+    /// If no runtime has been explicitly created this function will return an empty runtime.
     #[inline(always)]
     pub fn current() -> Runtime {
         match RUNTIME.try_with(|rt| rt.borrow().clone()) {
             Ok(t) => t,
             Err(_e) => panic!("No runtime exists!"),
         }
+    }
+
+    /// Gets a handle to the current runtime. As treadmill uses thread local storage to create the
+    /// runtime this will only return it from the thread which `block_on` was called when within an
+    /// asynchronous function.
+    ///
+    /// If no runtime has been explicitly created this function will panic.
+    #[inline(always)]
+    pub fn try_current() -> Runtime {
+        match RUNTIME.try_with(|rt| rt.borrow().clone()) {
+            Ok(t) if !t.is_empty() => t,
+            _ => panic!("No runtime exists!"),
+        }
+    }
+
+    /// Returns if the runtime has any workers or whether it's an empty runtime capable of doing
+    /// nothing.
+    pub fn is_empty(&self) -> bool {
+        self.workers.is_empty()
     }
 }
 
