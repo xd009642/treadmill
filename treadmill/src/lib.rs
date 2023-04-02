@@ -1,4 +1,4 @@
-use crate::worker::WorkerPool;
+use crate::runtime::*;
 use async_task::Task;
 use futures_lite::future;
 use std::cell::RefCell;
@@ -8,11 +8,9 @@ use std::thread_local;
 // Re-exports
 #[cfg(feature = "macros")]
 pub use treadmill_macros::*;
-
-pub mod io_driver;
 #[cfg(feature = "net")]
 pub mod net;
-pub mod worker;
+pub mod runtime;
 
 thread_local! {
     static RUNTIME: RefCell<Runtime> = RefCell::new(Runtime {

@@ -1,5 +1,5 @@
 //! Works on things...?
-use crate::io_driver::Driver;
+use super::io::{Driver, Registry};
 use async_task::Runnable;
 use async_task::Task;
 use core::future::Future;
@@ -12,24 +12,28 @@ use tracing::trace;
 pub struct WorkerPool {
     workers: Arc<Vec<Arc<WorkerThread>>>,
     driver: Arc<Driver>,
+    registry: Arc<Registry>,
 }
 
 impl WorkerPool {
     pub fn new(len: usize, enable_work_stealing: bool) -> Self {
         assert_ne!(len, 0);
 
+        let (driver, registry) = Driver::new().expect("Unable to create IO Driver");
+
         Self {
             workers: Arc::new(make_workers(len, enable_work_stealing)),
-            driver: Driver::new().expect("Unable to create IO Driver").into(),
+            driver: driver.into(),
+            registry: registry.into(),
         }
     }
 
     pub fn empty() -> Self {
+        let (driver, registry) = Driver::new_with_capacity(0).expect("Unable to create IO Driver");
         Self {
             workers: Default::default(),
-            driver: Driver::new_with_capacity(0)
-                .expect("Unable to create IO Driver")
-                .into(),
+            driver: driver.into(),
+            registry: registry.into(),
         }
     }
 
