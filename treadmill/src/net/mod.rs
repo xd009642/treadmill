@@ -1,3 +1,4 @@
+use crate::{IoHandle, Runtime};
 use mio::net;
 use mio::{Events, Interest, Poll, Token};
 use std::io;
@@ -5,7 +6,7 @@ use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 
 pub struct TcpListener {
-    listener: net::TcpListener,
+    listener: IoHandle<net::TcpListener>,
 }
 
 fn for_each_addr<A, F, T>(addrs: A, f: F) -> io::Result<T>
@@ -27,16 +28,22 @@ where
     }
 }
 
+// So generally speaking when we implement things that need IO, we'll get the IO handle or driver
+// (probably handle?), create the mio source, maybe pop a waker in and run some async fn that
+// completes when mio says the token is up. Then when we try to read it should work - maybe?
+
 impl TcpListener {
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<TcpListener> {
         let listener = for_each_addr(addr, net::TcpListener::bind)?;
+        let driver = Runtime::current().io_driver();
+        let handle = driver.create_io_source(listener, Interest::READABLE)?;
         // We probably want an IO driver struct in the runtime to handle the poll/events and
         // registry
         todo!();
     }
 
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        let (stream, addr) = net::TcpListener::accept(&self.listener)?;
+        let (stream, addr) = net::TcpListener::accept(self.listener.source())?;
         todo!()
     }
 }

@@ -1,39 +1,36 @@
 //! Works on things...?
-use super::io::{Driver, Registry};
+use super::io::Driver;
 use async_task::Runnable;
 use async_task::Task;
 use core::future::Future;
 use crossbeam_deque::{Steal, Stealer, Worker};
 use std::sync::Arc;
-use std::thread;
+use std::{io, thread};
 use tracing::trace;
 
 #[derive(Clone)]
 pub struct WorkerPool {
     workers: Arc<Vec<Arc<WorkerThread>>>,
     driver: Arc<Driver>,
-    registry: Arc<Registry>,
 }
 
 impl WorkerPool {
     pub fn new(len: usize, enable_work_stealing: bool) -> Self {
         assert_ne!(len, 0);
 
-        let (driver, registry) = Driver::new().expect("Unable to create IO Driver");
+        let driver = Driver::new().expect("Unable to create IO Driver");
 
         Self {
             workers: Arc::new(make_workers(len, enable_work_stealing)),
             driver: driver.into(),
-            registry: registry.into(),
         }
     }
 
     pub fn empty() -> Self {
-        let (driver, registry) = Driver::new_with_capacity(0).expect("Unable to create IO Driver");
+        let driver = Driver::new_with_capacity(0).expect("Unable to create IO Driver");
         Self {
             workers: Default::default(),
             driver: driver.into(),
-            registry: registry.into(),
         }
     }
 
@@ -59,6 +56,10 @@ impl WorkerPool {
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.workers.is_empty()
+    }
+
+    pub fn io_driver(&self) -> Arc<Driver> {
+        self.driver.clone()
     }
 }
 
