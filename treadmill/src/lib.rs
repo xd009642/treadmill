@@ -3,14 +3,11 @@ use async_task::Task;
 use futures_lite::future;
 use std::cell::RefCell;
 use std::future::Future;
-use std::sync::Arc;
 use std::thread_local;
 
 // Re-exports
 #[cfg(feature = "macros")]
 pub use treadmill_macros::*;
-#[cfg(feature = "net")]
-pub mod net;
 pub mod runtime;
 
 thread_local! {
@@ -125,10 +122,6 @@ impl Runtime {
             Ok(t) => t,
             Err(_e) => panic!("No runtime exists!"),
         }
-    }
-
-    pub(crate) fn io_driver(&self) -> Arc<Driver> {
-        self.workers.io_driver()
     }
 
     /// Gets a handle to the current runtime. As treadmill uses thread local storage to create the
