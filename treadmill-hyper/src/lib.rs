@@ -2,9 +2,12 @@
 //! that's the case...
 //!
 //! Reference https://github.com/async-rs/async-std-hyper
+use async_io::Async;
+use futures_lite::io::{AsyncRead, AsyncWrite};
 use hyper::rt::Executor;
 use std::future::Future;
 use std::io;
+use std::net::{TcpListener, TcpStream};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -21,7 +24,16 @@ where
     }
 }
 
-pub struct TreadmillListener;
+pub struct TreadmillListener {
+    io: Async<TcpListener>,
+}
+
+impl TreadmillListener {
+    pub fn new(io: TcpListener) -> io::Result<Self> {
+        let io = Async::new(io)?;
+        Ok(Self { io })
+    }
+}
 
 #[cfg(feature = "server")]
 impl hyper::server::accept::Accept for TreadmillListener {
@@ -32,11 +44,14 @@ impl hyper::server::accept::Accept for TreadmillListener {
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
-        todo!()
+        let stream = Pin::new(&mut self.0.incoming().poll_next(cx)).unwrap()?;
+        Poll::Ready(Some(Ok(TreadmillStream { stream })))
     }
 }
 
-pub struct TreadmillStream;
+pub struct TreadmillStream {
+    stream: Async<TcpStream>,
+}
 
 impl tokio::io::AsyncRead for TreadmillStream {
     fn poll_read(
@@ -44,7 +59,14 @@ impl tokio::io::AsyncRead for TreadmillStream {
         cx: &mut Context,
         buf: &mut tokio::io::ReadBuf,
     ) -> Poll<io::Result<()>> {
-        todo!()
+        if let Poll::Ready(bytes) =
+            Pin::new(&mut self.stream).poll_read(cx, buf.initialize_unfilled())?
+        {
+            buf.set_filled(bytes);
+            Poll::Ready(Ok(()))
+        } else {
+            Poll::Pending
+        }
     }
 }
 
@@ -54,14 +76,14 @@ impl tokio::io::AsyncWrite for TreadmillStream {
         cx: &mut Context,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        todo!()
+        Pin::new(&mut self.stream).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
-        todo!()
+        Pin::new(&mut self.stream).poll_flush(cx)
     }
 
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
-        todo!()
+        Pin::new(&mut self.stream).poll_close(cx)
     }
 }
