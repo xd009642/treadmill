@@ -10,6 +10,9 @@ server = ["hyper/server"]
 client = ["hyper/client"]
 
 [dependencies]
+async-io = "1.13.0"
+futures-lite = "1.13.0"
 hyper = { version = "0.14.25" }
 tokio = { version = "1.27.0", default-features = false }
+tracing = "0.1.37"
 treadmill = { path = "../treadmill" }

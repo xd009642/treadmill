@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 treadmill = { path = "../treadmill" }
-treadmill-hyper = { path = "../treadmill-hyper" }
+treadmill-hyper = { path = "../treadmill-hyper", features = ["server"] }
 treadmill-macros = { path = "../treadmill-macros" }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 async-channel = "1.8.0"
