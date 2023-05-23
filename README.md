@@ -31,7 +31,7 @@ reduce boilerplate
 * [x] Basic `block_on` implementation
 * [x] Multi-threaded run queue
 * [x] Work stealing
-* [ ] Macro crate for standard UX
+* [x] Macro crate for standard UX
 * [ ] A hyper executor
 * [ ] Different implementations
 * [ ] Blocking task handling
@@ -40,5 +40,5 @@ reduce boilerplate
 
 ## References
 
-* [Kat's Expert Async Workshop](https://www.youtube.com/watch?v=Z-2siR9Ki84&list=PL1AoGvxomykTuOMzY5KrI4WiPCsIlYnAM&index=14).
+* [Kat's Expert Async Workshop](https://learn.spacekookie.de/rust/).
 * [Making the Tokio scheduler 10x Faster](https://tokio.rs/blog/2019-10-scheduler)

@@ -9,8 +9,9 @@ use hyper::rt::Executor;
 use std::future::Future;
 use std::io;
 use std::net::{TcpListener, TcpStream};
-use std::pin::Pin;
+use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
+use std::thread;
 use tracing::trace;
 
 #[derive(Clone, Copy)]
@@ -36,31 +37,12 @@ impl TreadmillListener {
         let io = Async::new(io)?;
         Ok(Self { io })
     }
-}
 
-#[cfg(feature = "server")]
-impl hyper::server::accept::Accept for TreadmillListener {
-    type Conn = TreadmillStream;
-    type Error = io::Error; // Work out this
-
-    fn poll_accept(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context,
-    ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
-        trace!("called accept");
-        if let Poll::Ready(res) = Box::pin(self.io.incoming()).poll_next(cx) {
-            trace!("Accepted connection");
-            if let Some(stream) = res {
-                trace!("Some?");
-                Poll::Ready(Some(stream.map(|stream| TreadmillStream { stream })))
-            } else {
-                trace!("None");
-                Poll::Ready(None)
-            }
-        } else {
-            trace!("Pending");
-            Poll::Pending
-        }
+    #[cfg(feature = "server")]
+    pub async fn accept(&self) -> Option<io::Result<TreadmillStream>> {
+        let mut incoming = pin!(self.io.incoming());
+        let stream = incoming.next().await?;
+        Some(stream.map(|stream| TreadmillStream { stream }))
     }
 }
 
@@ -82,6 +64,7 @@ impl tokio::io::AsyncRead for TreadmillStream {
             trace!("Read {} bytes from a TcpStream", bytes);
             Poll::Ready(Ok(()))
         } else {
+            trace!("Pending data to read");
             Poll::Pending
         }
     }
@@ -93,14 +76,17 @@ impl tokio::io::AsyncWrite for TreadmillStream {
         cx: &mut Context,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
+        trace!("Writing");
         Pin::new(&mut self.stream).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
+        trace!("Flushing");
         Pin::new(&mut self.stream).poll_flush(cx)
     }
 
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
+        trace!("Shutting down");
         Pin::new(&mut self.stream).poll_close(cx)
     }
 }
