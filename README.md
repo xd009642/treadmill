@@ -24,7 +24,7 @@ core of the project
 * treadmill-macros: provide convenience macros like `#[treadmill::main]` to
 reduce boilerplate
 * treadmill-hyper: a hyper executor so we can do web servers with treadmill!
-* examples: example projects
+* treadmill-examples: example projects
 
 ## Roadmap
 
@@ -32,7 +32,7 @@ reduce boilerplate
 * [x] Multi-threaded run queue
 * [x] Work stealing
 * [x] Macro crate for standard UX
-* [ ] A hyper executor
+* [x] A hyper executor
 * [ ] Different implementations
 * [ ] Blocking task handling
 * [ ] Instrumentation and metrics
