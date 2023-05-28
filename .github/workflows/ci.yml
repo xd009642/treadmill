@@ -1,0 +1,62 @@
+name: Build
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+          - stable
+          - beta
+          - nightly 
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.version }}
+          override: true
+          components: rustfmt
+      - name: test
+        run: |
+          cargo test 
+      - name: check formatting
+        run: cargo fmt -- --check
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        version:
+          - stable
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.version }}
+          override: true
+      - name: test
+        run: |
+          cargo test
+  mac:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        version:
+          - nightly
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.version }}
+          override: true
+          components: llvm-tools-preview
+      - name: test
+        run: |
+          cargo test

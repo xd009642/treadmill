@@ -15,6 +15,11 @@ use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
 use tracing::trace;
 
+#[cfg(feature = "client")]
+pub mod client;
+#[cfg(feature = "client")]
+pub use crate::client::*;
+
 #[derive(Clone, Copy)]
 pub struct TreadmillExecutor;
 
