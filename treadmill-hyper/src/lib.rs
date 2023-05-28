@@ -4,14 +4,15 @@
 //! Reference https://github.com/async-rs/async-std-hyper
 use async_io::Async;
 use futures_lite::io::{AsyncRead, AsyncWrite};
-use futures_lite::StreamExt;
+use futures_lite::{Stream, StreamExt};
 use hyper::rt::Executor;
+#[cfg(feature = "server")]
+use hyper::server::accept::{self, Accept};
 use std::future::Future;
 use std::io;
 use std::net::{TcpListener, TcpStream};
 use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
-use std::thread;
 use tracing::trace;
 
 #[derive(Clone, Copy)]
@@ -38,11 +39,29 @@ impl TreadmillListener {
         Ok(Self { io })
     }
 
+    // TODO this results in:
+    // ```
+    // thread 'main' panicked at '`async fn` resumed after completion', /home/daniel/personal/treadmill/treadmill-hyper/src/lib.rs:42:71
+    // ```
+    //
+    // Should figure out why?
     #[cfg(feature = "server")]
     pub async fn accept(&self) -> Option<io::Result<TreadmillStream>> {
         let mut incoming = pin!(self.io.incoming());
         let stream = incoming.next().await?;
         Some(stream.map(|stream| TreadmillStream { stream }))
+    }
+
+    #[cfg(all(feature = "server", feature = "stream"))]
+    pub fn accept_stream(&self) -> impl Stream<Item = io::Result<TreadmillStream>> + '_ {
+        self.io
+            .incoming()
+            .map(|x| x.map(|stream| TreadmillStream { stream }))
+    }
+
+    #[cfg(all(feature = "server", feature = "stream"))]
+    pub fn request_acceptor(&self) -> impl Accept<Conn = TreadmillStream, Error = io::Error> + '_ {
+        accept::from_stream(self.accept_stream())
     }
 }
 
@@ -76,17 +95,14 @@ impl tokio::io::AsyncWrite for TreadmillStream {
         cx: &mut Context,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        trace!("Writing");
         Pin::new(&mut self.stream).poll_write(cx, buf)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
-        trace!("Flushing");
         Pin::new(&mut self.stream).poll_flush(cx)
     }
 
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<io::Result<()>> {
-        trace!("Shutting down");
         Pin::new(&mut self.stream).poll_close(cx)
     }
 }

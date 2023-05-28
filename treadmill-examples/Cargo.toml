@@ -12,6 +12,7 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 async-channel = "1.8.0"
 tracing = "0.1.37"
 hyper = { version = "0.14.25", features = ["server", "http1"] }
+futures-lite = "1.13.0"
 
 [[bin]]
 name = "simple"

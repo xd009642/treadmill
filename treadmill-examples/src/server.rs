@@ -1,13 +1,9 @@
 use hyper::{
-    rt::Executor,
-    server::{accept, Builder},
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server,
 };
 use std::convert::Infallible;
 use std::net::TcpListener;
-use std::pin::pin;
-use std::future::Future;
 use tracing::{error, info};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use treadmill::Runtime;
@@ -27,15 +23,11 @@ fn main() {
         let make_service =
             make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle)) });
 
-        // So I need to provide an acceptor which listens to TCP not implemented in tokio to be
-        // able to provide my own runtime. TODO
         let listener = TcpListener::bind("0.0.0.0:8080").unwrap();
 
         let listener = TreadmillListener::new(listener).unwrap();
 
-        let mut fut = Box::pin(listener.accept());
-
-        let server = Server::builder(accept::poll_fn(|ctx| fut.poll(ctx)))
+        let server = Server::builder(listener.request_acceptor())
             .executor(TreadmillExecutor)
             .serve(make_service);
 
