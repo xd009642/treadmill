@@ -8,7 +8,7 @@ edition = "2021"
 [features]
 default = ["server", "client", "stream", "http1", "http2"]
 server = ["hyper/server"]
-client = ["hyper/client"]
+client = ["hyper/client"] #, "trust-dns-resolver"]
 stream = ["hyper/stream"]
 http1 = ["hyper/http1"]
 http2 = ["hyper/http2"]
@@ -20,3 +20,4 @@ hyper = { version = "0.14.25" }
 tokio = { version = "1.27.0", default-features = false }
 tracing = "0.1.37"
 treadmill = { path = "../treadmill" }
+#trust-dns-resolver = { version = "0.22.0", default-features = false, features = ["system-config"], optional = true }
