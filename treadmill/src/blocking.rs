@@ -62,3 +62,16 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{spawn_blocking, Runtime};
+    use std::time::Duration;
+
+    #[test]
+    fn simple_blocking_test() {
+        let six = Runtime::default().block_on(async { spawn_blocking(|| 6).await.unwrap() });
+        assert_eq!(six, 6);
+    }
+}
