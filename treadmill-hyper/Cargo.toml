@@ -6,10 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["server", "client", "stream", "http1", "http2"]
-server = ["hyper/server"]
-client = ["hyper/client", "trust-dns-resolver", "enum-as-inner"]
-stream = ["hyper/stream"]
+default = ["server", "client", "http1", "http2"]
+server = ["hyper/server", "hyper/stream"]
+client = ["hyper/client", "trust-dns-resolver", "enum-as-inner", "hyper/stream"]
 http1 = ["hyper/http1"]
 http2 = ["hyper/http2"]
 

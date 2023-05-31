@@ -57,14 +57,14 @@ impl TreadmillListener {
         Some(stream.map(|stream| TreadmillStream { stream }))
     }
 
-    #[cfg(all(feature = "server", feature = "stream"))]
+    #[cfg(any(feature = "server", feature = "client"))]
     pub fn accept_stream(&self) -> impl Stream<Item = io::Result<TreadmillStream>> + '_ {
         self.io
             .incoming()
             .map(|x| x.map(|stream| TreadmillStream { stream }))
     }
 
-    #[cfg(all(feature = "server", feature = "stream"))]
+    #[cfg(feature = "server")]
     pub fn request_acceptor(&self) -> impl Accept<Conn = TreadmillStream, Error = io::Error> + '_ {
         accept::from_stream(self.accept_stream())
     }
