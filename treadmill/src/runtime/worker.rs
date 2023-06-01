@@ -32,6 +32,7 @@ impl WorkerPool {
         F: Future<Output = T> + Send + 'static,
         T: Send + 'static,
     {
+        assert!(!self.workers.is_empty(), "No workers to spawn to");
         let worker_index = fastrand::usize(0..self.workers.len());
         trace!("Spawning task to worker[{}]", worker_index);
         self.workers[worker_index].submit_task(future)

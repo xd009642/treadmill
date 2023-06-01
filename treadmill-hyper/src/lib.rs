@@ -74,6 +74,13 @@ pub struct TreadmillStream {
     stream: Async<TcpStream>,
 }
 
+impl TreadmillStream {
+    pub fn new(stream: TcpStream) -> io::Result<Self> {
+        let stream = Async::new(stream)?;
+        Ok(Self { stream })
+    }
+}
+
 impl tokio::io::AsyncRead for TreadmillStream {
     fn poll_read(
         mut self: Pin<&mut Self>,

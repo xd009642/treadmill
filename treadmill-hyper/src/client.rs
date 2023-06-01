@@ -5,7 +5,7 @@ use hyper::Uri;
 use std::net::*;
 use std::{
     future::Future,
-    pin::{pin, Pin},
+    pin::Pin,
     task::{self, Poll},
 };
 use trust_dns_resolver::config::*;
@@ -25,17 +25,14 @@ impl TreadmillConnector {
     async fn call(&self, uri: Uri) -> io::Result<TreadmillStream> {
         let port = match uri.port_u16() {
             Some(p) => p,
-            None => 80, // TODO
+            None => 80, // TODO do the correct default port for the protocol
         };
         let ip = treadmill::spawn_blocking(move || resolve_ip(uri))
             .await
             .unwrap();
 
-        let listener = TcpListener::bind((ip, port))?;
-        pin!(TreadmillListener::new(listener)?.accept_stream())
-            .next()
-            .await
-            .unwrap()
+        let stream = TcpStream::connect((ip, port))?;
+        Ok(TreadmillStream::new(stream)?)
     }
 }
 
@@ -60,7 +57,7 @@ impl Service<Uri> for TreadmillConnector {
 fn resolve_ip(uri: Uri) -> IpAddr {
     let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
 
-    let response = resolver.lookup_ip(uri.to_string()).unwrap();
+    let response = resolver.lookup_ip(uri.host().unwrap().to_string()).unwrap();
 
     response.iter().next().expect("no addresses returned!")
 }

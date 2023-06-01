@@ -221,11 +221,61 @@ where
     T: AsyncRead + AsyncWrite + Connection + Unpin + Send + 'static,
 ```
 
-Okay so time to implement `Service` for a `TreadmillConnector` type and then we
-can see the following code work:
+Okay so time to implement `Service` for a `TreadmillConnector` type and then
+eventually we should see the following code work:
 
 ```rust
 let client: Client<TreadmillConnector, hyper::Body> = Client::builder()
     .executor(TreadmillExecutor)
     .build(TreadmillConnector);
 ```
+
+DNS DNS DNS
+
+```rust
+#[derive(Clone)]
+pub struct TreadmillConnector;
+
+impl TreadmillConnector {
+    async fn call(&self, uri: Uri) -> io::Result<TreadmillStream> {
+        let port = match uri.port_u16() {
+            Some(p) => p,
+            None => 80, // TODO do the correct default port for the protocol
+        };
+        let ip = treadmill::spawn_blocking(move || resolve_ip(uri))
+            .await
+            .unwrap();
+
+        let stream = TcpStream::connect((ip, port))?;
+        Ok(TreadmillStream::new(stream)?)
+    }
+}
+
+fn resolve_ip(uri: Uri) -> IpAddr {
+    let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+    let response = resolver.lookup_ip(uri.host().unwrap().to_string()).unwrap();
+    response.iter().next().expect("no addresses returned!")
+}
+
+impl Service<Uri> for TreadmillConnector {
+    type Response = TreadmillStream;
+    type Error = io::Error;
+
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(&mut self, _: &mut task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, uri: Uri) -> Self::Future {
+        let this = self.clone();
+        Box::pin(async move { this.call(uri).await })
+    }
+}
+```
+
+So things I had to implement for this:
+
+1. `spawn_blocking`
+2. DNS lookup via trust-dns (which is using tokio)
+3. Something to make the runtime findable on threads spawned (ahhh `thread_local` induced pain)
