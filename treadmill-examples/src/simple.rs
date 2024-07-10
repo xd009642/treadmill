@@ -4,7 +4,6 @@ use core::{
     task::{Context, Poll},
 };
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-use treadmill::Runtime;
 
 struct SayNTimes {
     to_say: String,

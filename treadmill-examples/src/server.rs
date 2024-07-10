@@ -1,6 +1,4 @@
 use hyper::{
-    rt::Executor,
-    server::Builder,
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server,
 };
@@ -25,10 +23,11 @@ fn main() {
         let make_service =
             make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle)) });
 
-        // So I need to provide an acceptor which listens to TCP not implemented in tokio to be
-        // able to provide my own runtime. TODO
         let listener = TcpListener::bind("0.0.0.0:8080").unwrap();
-        let server = Server::builder(TreadmillListener::new(listener).unwrap())
+
+        let listener = TreadmillListener::new(listener).unwrap();
+
+        let server = Server::builder(listener.request_acceptor())
             .executor(TreadmillExecutor)
             .serve(make_service);
 

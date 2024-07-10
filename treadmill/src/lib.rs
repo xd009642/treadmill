@@ -1,3 +1,4 @@
+use crate::blocking::*;
 use crate::runtime::*;
 use async_task::Task;
 use futures_lite::future;
@@ -8,6 +9,7 @@ use std::thread_local;
 // Re-exports
 #[cfg(feature = "macros")]
 pub use treadmill_macros::*;
+pub mod blocking;
 pub mod runtime;
 
 thread_local! {
@@ -100,6 +102,15 @@ impl Runtime {
         self.workers.spawn(future)
     }
 
+    /// Spawns a blocking task to a separate thread to avoid blocking the executor
+    pub fn spawn_blocking<F, R>(&self, f: F) -> JoinHandle<R>
+    where
+        F: FnOnce() -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        JoinHandle::new(f)
+    }
+
     /// This method exists on the runtime to just allow us to test the work stealing
     /// implementation. So we'll create a ton of futures and only put them on one worker and then
     /// see that things are actually completed on other workers!
@@ -151,4 +162,12 @@ where
     T: Send + 'static,
 {
     Runtime::current().spawn(future)
+}
+
+pub fn spawn_blocking<F, R>(f: F) -> JoinHandle<R>
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
+{
+    Runtime::current().spawn_blocking(f)
 }

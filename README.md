@@ -14,6 +14,13 @@ performance, stability, or correctness. What it is, is a project for me to dive
 deeper and learn more. And maybe some day I'll write what I learn up and take
 you all along for the ride. But until then, gotta run!
 
+## Current Progress at Stop
+
+So I had the hyper server example running, but clients require DNS and I wasn't
+just easily able to replace a client with my runtime as a result. So I fell
+down a DNS and mio rabbit hole and lost interest. Maybe I'll restart again but
+the longer I'm aware the harder it becomes to return.
+
 ## Crates
 
 This project is split into multiple crates in the workspace here they are and
@@ -24,15 +31,15 @@ core of the project
 * treadmill-macros: provide convenience macros like `#[treadmill::main]` to
 reduce boilerplate
 * treadmill-hyper: a hyper executor so we can do web servers with treadmill!
-* examples: example projects
+* treadmill-examples: example projects
 
 ## Roadmap
 
 * [x] Basic `block_on` implementation
 * [x] Multi-threaded run queue
 * [x] Work stealing
-* [ ] Macro crate for standard UX
-* [ ] A hyper executor
+* [x] Macro crate for standard UX
+* [x] A hyper executor
 * [ ] Different implementations
 * [ ] Blocking task handling
 * [ ] Instrumentation and metrics
@@ -40,5 +47,5 @@ reduce boilerplate
 
 ## References
 
-* [Kat's Expert Async Workshop](https://www.youtube.com/watch?v=Z-2siR9Ki84&list=PL1AoGvxomykTuOMzY5KrI4WiPCsIlYnAM&index=14).
+* [Kat's Expert Async Workshop](https://learn.spacekookie.de/rust/).
 * [Making the Tokio scheduler 10x Faster](https://tokio.rs/blog/2019-10-scheduler)

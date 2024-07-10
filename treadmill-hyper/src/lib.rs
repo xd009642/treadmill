@@ -4,14 +4,21 @@
 //! Reference https://github.com/async-rs/async-std-hyper
 use async_io::Async;
 use futures_lite::io::{AsyncRead, AsyncWrite};
-use futures_lite::StreamExt;
+use futures_lite::{Stream, StreamExt};
 use hyper::rt::Executor;
+#[cfg(feature = "server")]
+use hyper::server::accept::{self, Accept};
 use std::future::Future;
 use std::io;
 use std::net::{TcpListener, TcpStream};
-use std::pin::Pin;
+use std::pin::{pin, Pin};
 use std::task::{Context, Poll};
 use tracing::trace;
+
+#[cfg(feature = "client")]
+pub mod client;
+#[cfg(feature = "client")]
+pub use crate::client::*;
 
 #[derive(Clone, Copy)]
 pub struct TreadmillExecutor;
@@ -36,36 +43,42 @@ impl TreadmillListener {
         let io = Async::new(io)?;
         Ok(Self { io })
     }
-}
 
-#[cfg(feature = "server")]
-impl hyper::server::accept::Accept for TreadmillListener {
-    type Conn = TreadmillStream;
-    type Error = io::Error; // Work out this
+    // TODO this results in:
+    // ```
+    // thread 'main' panicked at '`async fn` resumed after completion', /home/daniel/personal/treadmill/treadmill-hyper/src/lib.rs:42:71
+    // ```
+    //
+    // Should figure out why?
+    #[cfg(feature = "server")]
+    pub async fn accept(&self) -> Option<io::Result<TreadmillStream>> {
+        let mut incoming = pin!(self.io.incoming());
+        let stream = incoming.next().await?;
+        Some(stream.map(|stream| TreadmillStream { stream }))
+    }
 
-    fn poll_accept(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context,
-    ) -> Poll<Option<Result<Self::Conn, Self::Error>>> {
-        trace!("called accept");
-        if let Poll::Ready(res) = Box::pin(self.io.incoming()).poll_next(cx) {
-            trace!("Accepted connection");
-            if let Some(stream) = res {
-                trace!("Some?");
-                Poll::Ready(Some(stream.map(|stream| TreadmillStream { stream })))
-            } else {
-                trace!("None");
-                Poll::Ready(None)
-            }
-        } else {
-            trace!("Pending");
-            Poll::Pending
-        }
+    #[cfg(any(feature = "server", feature = "client"))]
+    pub fn accept_stream(&self) -> impl Stream<Item = io::Result<TreadmillStream>> + '_ {
+        self.io
+            .incoming()
+            .map(|x| x.map(|stream| TreadmillStream { stream }))
+    }
+
+    #[cfg(feature = "server")]
+    pub fn request_acceptor(&self) -> impl Accept<Conn = TreadmillStream, Error = io::Error> + '_ {
+        accept::from_stream(self.accept_stream())
     }
 }
 
 pub struct TreadmillStream {
     stream: Async<TcpStream>,
+}
+
+impl TreadmillStream {
+    pub fn new(stream: TcpStream) -> io::Result<Self> {
+        let stream = Async::new(stream)?;
+        Ok(Self { stream })
+    }
 }
 
 impl tokio::io::AsyncRead for TreadmillStream {
@@ -82,6 +95,7 @@ impl tokio::io::AsyncRead for TreadmillStream {
             trace!("Read {} bytes from a TcpStream", bytes);
             Poll::Ready(Ok(()))
         } else {
+            trace!("Pending data to read");
             Poll::Pending
         }
     }

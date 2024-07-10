@@ -1,0 +1,4 @@
+[main]
+engine = "Llvm"
+exclude-files = ["treadmill-examples/*"]
+skip-clean = true
