@@ -14,6 +14,13 @@ performance, stability, or correctness. What it is, is a project for me to dive
 deeper and learn more. And maybe some day I'll write what I learn up and take
 you all along for the ride. But until then, gotta run!
 
+## Current Progress at Stop
+
+So I had the hyper server example running, but clients require DNS and I wasn't
+just easily able to replace a client with my runtime as a result. So I fell
+down a DNS and mio rabbit hole and lost interest. Maybe I'll restart again but
+the longer I'm aware the harder it becomes to return.
+
 ## Crates
 
 This project is split into multiple crates in the workspace here they are and
